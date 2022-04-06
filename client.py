@@ -33,7 +33,7 @@ class Main(Tk):
         # and connect to the server
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.client.connect(ADDRESS)
-        self.title("client Application")
+        self.title("Client Application")
         self.resizable(False, False)
         self.fun_login_frame()
 

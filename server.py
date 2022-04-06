@@ -1,8 +1,11 @@
 # import socket library
 import socket
-
+from colorama import Fore
 # import threading library
 import threading
+
+import dataBase as db
+import serverTOClient as stoc
 
 # Choose a port that is free
 PORT = 5050
@@ -18,26 +21,63 @@ ADDRESS = (SERVER, PORT)
 # and decoding will occur
 FORMAT = "utf-8"
 
-# Lists that will contains
-# all the clients connected to
-# the server and their names.
-clients, names = [], []
 
-# Create a new socket for
-# the server
-server = socket.socket(socket.AF_INET,
-                       socket.SOCK_STREAM)
-
-# bind the address of the
-# server to the socket
-server.bind(ADDRESS)
+def body_to_dict(body):
+    items = {}
+    for b in body:
+        k, v = b.split(':')
+        k = k.split('<')[-1]
+        v = v.split('>')[0]
+        items[k] = v
+    return items
 
 
-# function to start the connection
-def startChat():
-    print("server is working on " + SERVER)
+def register(body):
+    items = body_to_dict(body)
+    flag = db.creat_user(username=items['user'], password=items['pass'])
+    return stoc.register_message(flag)
 
-    # listening for connections
+
+def login(body):
+    items = body_to_dict(body)
+    flag = db.is_exist(username=items['user'], password=items['pass'])
+    return stoc.login_message(flag)
+
+
+# method to handle the
+# incoming messages
+def handle(conn, addr):
+    while True:
+        # receive message
+        message = conn.recv(1024).decode(FORMAT)
+        flag = True
+        result = ''
+        body = message.split(' -Option ')
+        command = body.pop(0)
+
+        if command == 'Make':
+            result = register(body=body)
+        elif command == 'Connect':
+            result = login(body=body)
+        else:
+            flag = False
+        if flag:
+            print(Fore.LIGHTCYAN_EX + f"{addr} to server : {message}")
+            conn.send(result.encode(FORMAT))
+            print(Fore.BLUE + f"Server to {addr} : {result}")
+
+    # close the connection
+    # conn.close()
+
+
+if __name__ == '__main__':
+    # Create a new socket for
+    # the server
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+    # bind the address of the
+    # server to the socket
+    server.bind(ADDRESS)
     server.listen()
 
     while True:
@@ -45,58 +85,6 @@ def startChat():
         # a new connection to the client
         # and the address bound to it
         conn, addr = server.accept()
-        conn.send("NAME".encode(FORMAT))
-
-        # 1024 represents the max amount
-        # of data that can be received (bytes)
-        name = conn.recv(1024).decode(FORMAT)
-
-        # append the name and client
-        # to the respective list
-        names.append(name)
-        clients.append(conn)
-
-        print(f"Name is :{name}")
-
-        # broadcast message
-        broadcastMessage(f"{name} has joined the chat!".encode(FORMAT))
-
-        conn.send('Connection successful!'.encode(FORMAT))
-
         # Start the handling thread
-        thread = threading.Thread(target=handle,
-                                  args=(conn, addr))
+        thread = threading.Thread(target=handle, args=(conn, addr))
         thread.start()
-
-        # no. of clients connected
-        # to the server
-        print(f"active connections {threading.activeCount() - 1}")
-
-
-# method to handle the
-# incoming messages
-def handle(conn, addr):
-    print(f"new connection {addr}")
-    connected = True
-
-    while connected:
-        # receive message
-        message = conn.recv(1024)
-
-        # broadcast message
-        broadcastMessage(message)
-
-    # close the connection
-    conn.close()
-
-
-# method for broadcasting
-# messages to the each clients
-def broadcastMessage(message):
-    for client in clients:
-        client.send(message)
-
-
-# call the method to
-# begin the communication
-startChat()

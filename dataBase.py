@@ -16,20 +16,17 @@ def build_database():
 
 
 def creat_user(username, password):
-    flag = True
     build_database()
     conn = sqlite3.connect(DATABASE_NAME)
     cursor = conn.cursor()
     try:
         cursor.execute(f"INSERT INTO {TABLE_NAME} VALUES (:user_name,:password)",
                        {'user_name': username, 'password': password})
+        conn.commit()
+        conn.close()
+        return is_exist(username=username, password=password)
     except:
-        flag = False
-    # cursor.execute(f"INSERT INTO {TABLE_NAME} VALUES (:user_name,:password)",
-    #                {'user_name': username, 'password': password})
-    conn.commit()
-    conn.close()
-    return flag
+        return None
 
 
 def is_exist(username, password):
@@ -37,13 +34,12 @@ def is_exist(username, password):
     conn = sqlite3.connect(DATABASE_NAME)
     cursor = conn.cursor()
     try:
-        cursor.execute(f"SELECT * FROM {TABLE_NAME} WHERE user_name = '{username}' AND password = '{password}'")
+        cursor.execute(f"SELECT rowid,* FROM {TABLE_NAME} WHERE user_name = '{username}' AND password = '{password}'")
+        user = cursor.fetchone()
+
+        conn.commit()
+        conn.close()
+
+        return user[0]
     except:
         return None
-    # cursor.execute(f"SELECT * FROM {TABLE_NAME} WHERE user_name = '{username}' AND password = '{password}'")
-    user = cursor.fetchone()
-
-    conn.commit()
-    conn.close()
-
-    return user

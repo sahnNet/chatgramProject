@@ -1,12 +1,12 @@
-def register_message(flag):
+def register_message(id):
     result = "User Not Accepted -Option "
-    if flag:
-        result = "User Accepted -Option "
+    if id is not None:
+        result = f"User Accepted -Option <id:{id}>"
     return result
 
 
-def login_message(flag):
+def login_message(id):
     result = "ERROR -Option"
-    if flag is not None:
-        result = f"Connected -Option <id:{flag}>"
+    if id is not None:
+        result = f"Connected -Option <id:{id}>"
     return result

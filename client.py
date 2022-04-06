@@ -16,20 +16,24 @@ from time import sleep
 # Telegram Channel : @sahnTeach              #
 ##############################################
 
-PORT = 5050
+PORT = 50000
 SERVER = "localhost"
 ADDRESS = (SERVER, PORT)
 FORMAT = "utf-8"
+FONT = ('Times', 14)
 
 
 class Main(Tk):
-    FONT = ('Times', 14)
 
     # Initialize to create object of class
     def __init__(self):
         # Specify the title and size of the program box and specify the properties of the widgets inside the program box
         super(Main, self).__init__()
-        self.title("Client Application")
+        # Create a new client socket
+        # and connect to the server
+        self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.client.connect(ADDRESS)
+        self.title("client Application")
         self.resizable(False, False)
         self.fun_login_frame()
 
@@ -50,30 +54,30 @@ class Main(Tk):
             login_frame,
             text="Enter username",
             bg='#CCCCCC',
-            font=self.FONT
+            font=FONT
         ).grid(row=0, column=0, sticky=W, pady=10)
 
         Label(
             login_frame,
             text="Enter password",
             bg='#CCCCCC',
-            font=self.FONT
+            font=FONT
         ).grid(row=1, column=0, sticky=W, pady=10)
 
         username_entry = Entry(
             login_frame,
-            font=self.FONT
+            font=FONT
         )
         password_entry = Entry(
             login_frame,
-            font=self.FONT,
+            font=FONT,
             show='*'
         )
         login_button = Button(
             login_frame,
             width=15,
             text='Login',
-            font=self.FONT,
+            font=FONT,
             relief=SOLID,
             cursor='hand2',
             command=lambda: self.login_server(last_frame=login_frame, username=username_entry.get(),
@@ -83,7 +87,7 @@ class Main(Tk):
             login_frame,
             width=15,
             text='Register',
-            font=self.FONT,
+            font=FONT,
             relief=SOLID,
             cursor='hand2',
             command=lambda: self.fun_register_frame(last_frame=login_frame),
@@ -101,20 +105,14 @@ class Main(Tk):
                 messagebox.showerror("Error", f"{k} can't be empty")
                 return
 
-        # Create a new client socket
-        # and connect to the server
-        client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        client.connect(ADDRESS)
+        self.client.send(ctos.login_message(username=kwargs['username'], password=kwargs['password']).encode(FORMAT))
 
-        client.send(ctos.login_message(username=kwargs['username'], password=kwargs['password']).encode(FORMAT))
-
-        message = client.recv(1024).decode(FORMAT)
+        message = self.client.recv(1024).decode(FORMAT)
 
         if message.split(' -Option ')[0] == 'Connected':
             kwargs['last_frame'].destroy()
         else:
             messagebox.showerror("Error", f"Login failed")
-            client.close()
 
     def fun_register_frame(self, last_frame=None):
         if last_frame is not None:
@@ -133,36 +131,36 @@ class Main(Tk):
             register_frame,
             text="Enter username",
             bg='#CCCCCC',
-            font=self.FONT
+            font=FONT
         ).grid(row=0, column=0, sticky=W, pady=10)
 
         Label(
             register_frame,
             text="Enter password",
             bg='#CCCCCC',
-            font=self.FONT
+            font=FONT
         ).grid(row=1, column=0, sticky=W, pady=10)
 
         Label(
             register_frame,
             text="Re-Enter password",
             bg='#CCCCCC',
-            font=self.FONT
+            font=FONT
         ).grid(row=2, column=0, sticky=W, pady=10)
 
         username_entry = Entry(
             register_frame,
-            font=self.FONT
+            font=FONT
         )
 
         password_entry = Entry(
             register_frame,
-            font=self.FONT,
+            font=FONT,
             show='*'
         )
         password_again_entry = Entry(
             register_frame,
-            font=self.FONT,
+            font=FONT,
             show='*'
         )
 
@@ -170,7 +168,7 @@ class Main(Tk):
             register_frame,
             width=15,
             text='Login',
-            font=self.FONT,
+            font=FONT,
             relief=SOLID,
             cursor='hand2',
             command=lambda: self.fun_login_frame(register_frame),
@@ -180,7 +178,7 @@ class Main(Tk):
             register_frame,
             width=15,
             text='Register',
-            font=self.FONT,
+            font=FONT,
             relief=SOLID,
             cursor='hand2',
             command=lambda: self.register_server(last_frame=register_frame, username=username_entry.get(),
@@ -203,20 +201,14 @@ class Main(Tk):
             messagebox.showerror("Error", "password != re_password")
             return
 
-        # Create a new client socket
-        # and connect to the server
-        client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        client.connect(ADDRESS)
+        self.client.send(ctos.register_message(username=kwargs['username'], password=kwargs['password']).encode(FORMAT))
 
-        client.send(ctos.register_message(username=kwargs['username'], password=kwargs['password']).encode(FORMAT))
-
-        message = client.recv(1024).decode(FORMAT)
+        message = self.client.recv(1024).decode(FORMAT)
 
         if message.split(' -Option ')[0] == 'User Accepted':
             kwargs['last_frame'].destroy()
         else:
             messagebox.showerror("Error", f"Register failed")
-            client.close()
 
     def fun_home_frame(self):
         home_frame = Frame(
@@ -230,10 +222,16 @@ class Main(Tk):
 
         home_frame.pack()
 
+    def destroy(self):
+        super(Main, self).destroy()
+        self.client.close()
+
 
 if __name__ == '__main__':
     # Create object from class
     root = Main()
+
+
     # Put a graphical box in the run cycle
     def on_closing():
         if messagebox.askokcancel("Quit", "Do you want to quit?"):

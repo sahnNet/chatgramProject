@@ -8,7 +8,7 @@ import dataBase as db
 import serverTOClient as stoc
 
 # Choose a port that is free
-PORT = 5050
+PORT = 50000
 
 # An IPv4 address is obtained
 # for the server.
@@ -34,14 +34,14 @@ def body_to_dict(body):
 
 def register(body):
     items = body_to_dict(body)
-    flag = db.creat_user(username=items['user'], password=items['pass'])
-    return stoc.register_message(flag)
+    result = db.creat_user(username=items['user'], password=items['pass'])
+    return stoc.register_message(result)
 
 
 def login(body):
     items = body_to_dict(body)
-    flag = db.is_exist(username=items['user'], password=items['pass'])
-    return stoc.login_message(flag)
+    result = db.is_exist(username=items['user'], password=items['pass'])
+    return stoc.login_message(result)
 
 
 # method to handle the

@@ -111,6 +111,7 @@ class Main(Tk):
 
         if message.split(' -Option ')[0] == 'Connected':
             kwargs['last_frame'].destroy()
+            self.fun_home_frame(kwargs['username'])
         else:
             messagebox.showerror("Error", f"Login failed")
 
@@ -197,7 +198,13 @@ class Main(Tk):
             if v == '':
                 messagebox.showerror("Error", f"{k} can't be empty")
                 return
-        if kwargs['password'] != kwargs['re_password']:
+        if len(kwargs['username']) < 6:
+            messagebox.showerror("Error", "User name must be at least 6 characters long")
+            return
+        elif len(kwargs['password']) < 6:
+            messagebox.showerror("Error", "Password must be at least 6 characters long")
+            return
+        elif kwargs['password'] != kwargs['re_password']:
             messagebox.showerror("Error", "password != re_password")
             return
 
@@ -207,10 +214,11 @@ class Main(Tk):
 
         if message.split(' -Option ')[0] == 'User Accepted':
             kwargs['last_frame'].destroy()
+            self.fun_home_frame(kwargs['username'])
         else:
             messagebox.showerror("Error", f"Register failed")
 
-    def fun_home_frame(self):
+    def fun_home_frame(self, name):
         home_frame = Frame(
             self,
             bd=2,
@@ -219,7 +227,46 @@ class Main(Tk):
             padx=10,
             pady=10
         )
+        head_label = Label(home_frame,
+                           bg="#17202A",
+                           fg="#EAECEE",
+                           text=f"Welcome {name}",
+                           font=FONT,
+                           )
 
+        user_chat_entry = Entry(
+            home_frame,
+            font=FONT,
+        )
+        group_chat_entry = Entry(
+            home_frame,
+            font=FONT,
+        )
+        user_chat_button = Button(
+            home_frame,
+            width=15,
+            text='Go to user',
+            font=FONT,
+            relief=SOLID,
+            cursor='hand2',
+            command=None,
+        )
+
+        group_chat_button = Button(
+            home_frame,
+            width=15,
+            text='Go to group',
+            font=FONT,
+            relief=SOLID,
+            cursor='hand2',
+            command=None
+        )
+
+        head_label.grid(row=0, column=2, sticky=EW)
+        user_chat_entry.grid(row=1, column=0, pady=10, padx=20)
+        group_chat_entry.grid(row=2, column=0, pady=10, padx=20)
+        user_chat_button.grid(row=1, column=3, pady=10, padx=20)
+        group_chat_button.grid(row=2, column=3, pady=10, padx=20)
         home_frame.pack()
 
     def destroy(self):

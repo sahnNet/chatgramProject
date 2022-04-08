@@ -10,3 +10,7 @@ def login_message(id):
     if id is not None:
         result = f"Connected -Option <id:{id}>"
     return result
+
+
+def message(msg):
+    return f"Message -Option {msg}"

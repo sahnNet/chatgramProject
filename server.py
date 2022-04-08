@@ -1,5 +1,7 @@
 # import socket library
 import socket
+from time import sleep
+
 from colorama import Fore
 # import threading library
 import threading
@@ -21,6 +23,11 @@ ADDRESS = (SERVER, PORT)
 # and decoding will occur
 FORMAT = "utf-8"
 
+# Lists that will contains
+# all the clients connected to
+# the server and their names.
+clients = {}
+
 
 def body_to_dict(body):
     items = {}
@@ -30,6 +37,11 @@ def body_to_dict(body):
         v = v.split('>')[0]
         items[k] = v
     return items
+
+
+def send_to_all(message):
+    for client in clients.values():
+        client.send(stoc.message(message).encode(FORMAT))
 
 
 def register(body):
@@ -42,6 +54,14 @@ def login(body):
     items = body_to_dict(body)
     result = db.is_exist(username=items['user'], password=items['pass'])
     return stoc.login_message(result)
+
+
+def group(body, connection):
+    items = body_to_dict(body)
+    clients[items['user']] = connection
+    sleep(1)
+    send_to_all(f"{items['user']} join the chat room.")
+    send_to_all(f"Hi {items['user']}, welcome to the chat room.")
 
 
 # method to handle the
@@ -59,12 +79,18 @@ def handle(conn, addr):
             result = register(body=body)
         elif command == 'Connect':
             result = login(body=body)
+        elif command == 'Group':
+            group(body=body, connection=conn)
+        elif command == 'Message':
+            send_to_all(body[0])
         else:
             flag = False
+
         if flag:
             print(Fore.LIGHTCYAN_EX + f"{addr} to server : {message}")
-            conn.send(result.encode(FORMAT))
-            print(Fore.BLUE + f"Server to {addr} : {result}")
+            if result != '':
+                conn.send(result.encode(FORMAT))
+                print(Fore.BLUE + f"Server to {addr} : {result}")
 
     # close the connection
     # conn.close()

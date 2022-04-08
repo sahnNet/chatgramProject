@@ -2,6 +2,7 @@
 import socket
 import threading
 import clientToServer as ctos
+import clientChatRoom
 from tkinter import *
 from tkinter import font
 from tkinter import ttk
@@ -35,10 +36,10 @@ class Main(Tk):
         self.client.connect(ADDRESS)
         self.title("Client Application")
         self.resizable(False, False)
-        self.fun_login_frame()
+        self.login_frame()
 
     # Create and specify widgets in the application box
-    def fun_login_frame(self, last_frame=None):
+    def login_frame(self, last_frame=None):
         if last_frame is not None:
             last_frame.destroy()
 
@@ -90,7 +91,7 @@ class Main(Tk):
             font=FONT,
             relief=SOLID,
             cursor='hand2',
-            command=lambda: self.fun_register_frame(last_frame=login_frame),
+            command=lambda: self.register_frame(last_frame=login_frame),
         )
 
         username_entry.grid(row=0, column=1, pady=10, padx=20)
@@ -111,11 +112,11 @@ class Main(Tk):
 
         if message.split(' -Option ')[0] == 'Connected':
             kwargs['last_frame'].destroy()
-            self.fun_home_frame(kwargs['username'])
+            self.chat_room(kwargs['username'])
         else:
             messagebox.showerror("Error", f"Login failed")
 
-    def fun_register_frame(self, last_frame=None):
+    def register_frame(self, last_frame=None):
         if last_frame is not None:
             last_frame.destroy()
 
@@ -172,7 +173,7 @@ class Main(Tk):
             font=FONT,
             relief=SOLID,
             cursor='hand2',
-            command=lambda: self.fun_login_frame(register_frame),
+            command=lambda: self.login_frame(register_frame),
         )
 
         register_button = Button(
@@ -214,60 +215,12 @@ class Main(Tk):
 
         if message.split(' -Option ')[0] == 'User Accepted':
             kwargs['last_frame'].destroy()
-            self.fun_home_frame(kwargs['username'])
+            self.chat_room(kwargs['username'])
         else:
             messagebox.showerror("Error", f"Register failed")
 
-    def fun_home_frame(self, name):
-        home_frame = Frame(
-            self,
-            bd=2,
-            bg='#CCCCCC',
-            relief=SOLID,
-            padx=10,
-            pady=10
-        )
-        head_label = Label(home_frame,
-                           bg="#17202A",
-                           fg="#EAECEE",
-                           text=f"Welcome {name}",
-                           font=FONT,
-                           )
-
-        user_chat_entry = Entry(
-            home_frame,
-            font=FONT,
-        )
-        group_chat_entry = Entry(
-            home_frame,
-            font=FONT,
-        )
-        user_chat_button = Button(
-            home_frame,
-            width=15,
-            text='Go to user',
-            font=FONT,
-            relief=SOLID,
-            cursor='hand2',
-            command=None,
-        )
-
-        group_chat_button = Button(
-            home_frame,
-            width=15,
-            text='Go to group',
-            font=FONT,
-            relief=SOLID,
-            cursor='hand2',
-            command=None
-        )
-
-        head_label.grid(row=0, column=2, sticky=EW)
-        user_chat_entry.grid(row=1, column=0, pady=10, padx=20)
-        group_chat_entry.grid(row=2, column=0, pady=10, padx=20)
-        user_chat_button.grid(row=1, column=3, pady=10, padx=20)
-        group_chat_button.grid(row=2, column=3, pady=10, padx=20)
-        home_frame.pack()
+    def chat_room(self, name):
+        chat_room = clientChatRoom.ChatRoom(self, name, self.client)
 
     def destroy(self):
         super(Main, self).destroy()

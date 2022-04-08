@@ -39,9 +39,19 @@ def body_to_dict(body):
     return items
 
 
-def send_to_all(message):
+def send_to_all(from_user, message):
     for client in clients.values():
-        client.send(stoc.message(message).encode(FORMAT))
+        client.send(stoc.gm_message(from_user, message).encode(FORMAT))
+    print(Fore.LIGHTYELLOW_EX + f"{stoc.gm_message(from_user, message)}")
+
+
+def send_to_person(from_user, to_user, message):
+    for username, client in clients.items():
+        if username == to_user:
+            client.send(stoc.pm_message(from_user, to_user, message).encode(FORMAT))
+            break
+    print(
+        Fore.WHITE + f"{stoc.pm_message(from_user, to_user, message)}")
 
 
 def register(body):
@@ -60,8 +70,39 @@ def group(body, connection):
     items = body_to_dict(body)
     clients[items['user']] = connection
     sleep(1)
-    send_to_all(f"{items['user']} join the chat room.")
-    send_to_all(f"Hi {items['user']}, welcome to the chat room.")
+    send_to_all('Server', f"{items['user']} join the chat room.")
+    send_to_all('Server', f"Hi {items['user']}, welcome to the chat room.")
+
+
+def gm(body):
+    items = body_to_dict(body)
+    send_to_all(items['from'], items['message_body'])
+
+
+def pm(body):
+    items = body_to_dict(body)
+    send_to_person(items['from'], items['to'], items['message_body'])
+    send_to_person(items['from'], items['from'], items['message_body'])
+
+
+def get_users(body):
+    items = body_to_dict(body)
+    result = ""
+    counter = len(clients.keys())
+    for user_name in clients.keys():
+        counter -= 1
+        if user_name == items['user']:
+            continue
+        result += f"<{user_name}>"
+        if counter > 1:
+            result += "|"
+    return stoc.list_users_message(result)
+
+
+def exit_chatroom(body):
+    items = body_to_dict(body)
+    clients.pop(items['user'])
+    send_to_all('Server', f"{items['user']} left the chat room.")
 
 
 # method to handle the
@@ -81,19 +122,24 @@ def handle(conn, addr):
             result = login(body=body)
         elif command == 'Group':
             group(body=body, connection=conn)
-        elif command == 'Message':
-            send_to_all(body[0])
+        elif command == 'GM':
+            gm(body=body)
+        elif command == 'PM':
+            pm(body=body)
+        elif command == 'Users':
+            result = get_users(body=body)
+        elif command == 'End':
+            exit_chatroom(body=body)
+            # close the connection
+            conn.close()
         else:
             flag = False
 
         if flag:
-            print(Fore.LIGHTCYAN_EX + f"{addr} to server : {message}")
+            print(Fore.LIGHTCYAN_EX + f"{message}")
             if result != '':
                 conn.send(result.encode(FORMAT))
-                print(Fore.BLUE + f"Server to {addr} : {result}")
-
-    # close the connection
-    # conn.close()
+                print(Fore.BLUE + f"{result}")
 
 
 if __name__ == '__main__':

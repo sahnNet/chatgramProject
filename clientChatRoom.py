@@ -2,11 +2,8 @@
 import threading
 import clientToServer as ctos
 from tkinter import *
-from tkinter import font
-from tkinter import ttk
 
 FORMAT = "utf-8"
-FONT = ('Helvetica', 14)
 
 
 def body_to_dict(body):
@@ -25,6 +22,7 @@ class ChatRoom:
     def __init__(self, window, name, client):
         super().__init__()
 
+        self.flag_pv_user = False
         self.window = window
         self.name = name
         self.client = client
@@ -130,24 +128,35 @@ class ChatRoom:
     # function to receive messages
     def receive(self):
         while True:
-            try:
-                message = self.client.recv(1024).decode(FORMAT)
-                command, message = message.split(' -Option ')
+            message = self.client.recv(1024).decode(FORMAT)
+            body = message.split(' -Option ')
+            command = body.pop(0)
 
-                # if the messages from the server is NAME send the self.client's name
-                if command == 'Message':
-                    # insert messages to text box
-                    self.cons_text.config(state=NORMAL)
-                    self.cons_text.insert(END, message + "\n\n")
+            # if the messages from the server is NAME send the self.client's name
+            if command == 'GM' or command == 'PM':
+                items = body_to_dict(body)
+                # insert messages to text box
+                self.cons_text.config(state=NORMAL)
+                self.cons_text.insert(END, f"{items['from']}: {items['message_body']}" + "\n\n")
 
-                    self.cons_text.config(state=DISABLED)
-                    self.cons_text.see(END)
+                self.cons_text.config(state=DISABLED)
+                self.cons_text.see(END)
+            elif command == 'USERS':
+                # insert messages to text box
+                self.cons_text.config(state=NORMAL)
+                self.cons_text.insert(END, f"{body[0]}" + "\n\n")
 
-            except:
-                pass
+                self.cons_text.config(state=DISABLED)
+                self.cons_text.see(END)
 
     # function to send messages
     def send_message(self):
         self.cons_text.config(state=DISABLED)
-        message = f"{self.name}: {self.msg}"
-        self.client.send(ctos.message(message).encode(FORMAT))
+        if self.flag_pv_user:
+            self.client.send(ctos.pm_message(self.name, self.pv_user, self.msg).encode(FORMAT))
+        else:
+            self.client.send(ctos.gm_message(self.name, self.msg).encode(FORMAT))
+
+    def send_pv_message(self, user):
+        self.pv_user = user
+        self.flag_pv_user = not self.flag_pv_user

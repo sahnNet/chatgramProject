@@ -1,14 +1,9 @@
 # import all the required modules
 import socket
-import threading
 import clientToServer as ctos
 import clientChatRoom
 from tkinter import *
-from tkinter import font
-from tkinter import ttk
 from tkinter import messagebox
-from tkinter import filedialog
-from time import sleep
 
 ##############################################
 # Author : Sayed Ali Hosseini Nasab (SAHN)   #
@@ -220,7 +215,79 @@ class Main(Tk):
             messagebox.showerror("Error", f"Register failed")
 
     def chat_room(self, name):
-        chat_room = clientChatRoom.ChatRoom(self, name, self.client)
+        def action_user_chat_button():
+            if user_chat_button['text'] == "Send to user off":
+                user_chat_button['text'] = "Send to user on"
+            else:
+                user_chat_button['text'] = "Send to user off"
+
+            chat_room.send_pv_message(user_chat_entry.get())
+
+        def action_exit_chatroom_button():
+            self.client.send(ctos.exit_chatroom_message(name).encode(FORMAT))
+            chat_room.window.destroy()
+            del chat_room
+            self.login_frame()
+
+        chat_room = clientChatRoom.ChatRoom(Tk(), name, self.client)
+
+        home_frame = Frame(
+            self,
+            bd=2,
+            bg='#CCCCCC',
+            relief=SOLID,
+            padx=10,
+            pady=10
+        )
+        head_label = Label(home_frame,
+                           bg="#17202A",
+                           fg="#EAECEE",
+                           text=f"Welcome {name}",
+                           font=FONT,
+                           )
+
+        user_chat_entry = Entry(
+            home_frame,
+            font=FONT,
+        )
+        user_chat_button = Button(
+            home_frame,
+            width=15,
+            text='Send to user off',
+            font=FONT,
+            relief=SOLID,
+            cursor='hand2',
+            command=action_user_chat_button,
+        )
+
+        exit_chatroom_button = Button(
+            home_frame,
+            width=15,
+            text='Exit chatroom',
+            font=FONT,
+            relief=SOLID,
+            cursor='hand2',
+            command=action_exit_chatroom_button,
+        )
+
+        list_users_button = Button(
+            home_frame,
+            width=15,
+            text='List users',
+            font=FONT,
+            relief=SOLID,
+            cursor='hand2',
+            command=lambda: self.client.send(ctos.list_users_message(name).encode(FORMAT)),
+        )
+
+        head_label.grid(row=0, column=1, sticky=EW)
+        user_chat_entry.grid(row=1, column=0, pady=10, padx=20)
+        user_chat_button.grid(row=1, column=2, pady=10, padx=20)
+        exit_chatroom_button.grid(row=2, column=0, pady=10, padx=20)
+        list_users_button.grid(row=2, column=2, pady=10, padx=20)
+        home_frame.pack()
+
+        chat_room.window.mainloop()
 
     def destroy(self):
         super(Main, self).destroy()
